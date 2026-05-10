@@ -128,6 +128,7 @@ function buildPdfHtml_(data) {
   const submittedAt = data.submittedAt ? new Date(data.submittedAt) : new Date();
   const submissionDate = Utilities.formatDate(submittedAt, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
   const fullName = [data.firstName, data.lastName].filter(Boolean).join(' ');
+  const photoUrls = normalizeArray_(data.currentBathroomPhotos).filter(Boolean).slice(0, 6);
 
   return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/>' +
     '<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@400;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet"/>' +
@@ -146,8 +147,10 @@ function buildPdfHtml_(data) {
     '.meta{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);background:#fff;margin-bottom:28px}' +
     '.meta-cell{padding:12px 14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.meta-cell:nth-child(even){border-right:none}.meta-cell:nth-last-child(-n+2){border-bottom:none}' +
     '.label{font-size:8px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}.value{font-size:12px;font-weight:600;color:var(--ink)}' +
+    '.summary{background:var(--dark);color:#fff;padding:20px 22px;margin-bottom:28px;break-inside:avoid}.summary-title{font-family:"Bodoni Moda",serif;font-size:20px;margin-bottom:14px}.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.summary-item{border-top:1px solid rgba(184,151,90,.35);padding-top:8px}.summary-label{font-size:7px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}.summary-value{font-size:11px;color:rgba(255,255,255,.82)}' +
     '.section{margin:0 0 22px}.section-title{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:12px;display:flex;align-items:center;gap:10px}.section-title:before{content:"";width:20px;height:1px;background:var(--gold);display:block}' +
     '.qa{break-inside:avoid;background:#fff;border-left:2px solid var(--gold);padding:10px 14px;margin-bottom:8px}.question{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin-bottom:4px}.answer{white-space:pre-wrap;font-size:12px;color:var(--ink)}' +
+    '.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.photo{height:118px;background:#e8e2d8;border:1px solid var(--line);overflow:hidden}.photo img{width:100%;height:100%;object-fit:cover;display:block}' +
     '.footer{background:var(--dark);color:rgba(255,255,255,.45);padding:14px 40px;font-size:9px;display:flex;justify-content:space-between}.footer strong{color:var(--gold);font-weight:600}' +
     '</style></head><body><div class="page">' +
     '<div class="header"><div class="brand">FORTIS<span>.</span></div><div class="kicker">Renovation salle de bain</div>' +
@@ -162,6 +165,14 @@ function buildPdfHtml_(data) {
     metaCell_('Adresse du projet', data.projectAddress) +
     metaCell_('Budget', data.budget) +
     '</div>' +
+    '<div class="summary"><div class="summary-title">Synthèse du projet</div><div class="summary-grid">' +
+    summaryCell_('Logement', data.housingType || 'Non renseigné') +
+    summaryCell_('Budget', data.budget || 'Non renseigné') +
+    summaryCell_('Aménagement', data.layoutPreference || 'Non renseigné') +
+    summaryCell_('Échéance', buildTimelineSummary_(data)) +
+    summaryCell_('Accompagnement', formatValue_(data.supportNeeds) || 'Non renseigné') +
+    summaryCell_('Photos jointes', photoUrls.length ? photoUrls.length + ' photo(s)' : 'Aucune photo jointe') +
+    '</div></div>' +
     section_('Informations client', [
       ['Type de logement', data.housingType],
       ['Logement occupé pendant les travaux', data.occupiedDuringWorks],
@@ -190,12 +201,16 @@ function buildPdfHtml_(data) {
       ['Accompagnement attendu', data.supportNeeds],
       ['Niveau de liberté souhaité', data.designFreedom],
     ]) +
-    section_('Photos et plans', [
-      ['Photos ou plans disponibles', data.photosPlansAvailability],
-      ['Note', 'Le client pourra transmettre ses photos ou plans par email ou SMS après l’envoi du formulaire.'],
-    ]) +
+    '<div class="section"><div class="section-title">Photos de la salle de bain actuelle</div>' +
+    (photoUrls.length ? '<div class="photos">' + photoGrid_(photoUrls) + '</div>' : qa_('Photos jointes', 'Aucune photo jointe.')) +
+    qa_('Compléments', 'Le client pourra transmettre des plans ou inspirations complémentaires par email ou SMS après l’envoi du formulaire.') +
+    '</div>' +
     '</div><div class="footer"><span>193 Rue du Renard · 76000 Rouen · 07 67 49 13 24</span><strong>fortisrenovation.fr</strong></div>' +
     '</div></body></html>';
+}
+
+function summaryCell_(label, value) {
+  return '<div class="summary-item"><div class="summary-label">' + escapeHtml_(label) + '</div><div class="summary-value">' + escapeHtml_(value || 'Non renseigné') + '</div></div>';
 }
 
 function metaCell_(label, value) {
@@ -220,6 +235,25 @@ function formatValue_(value) {
   return String(value || '');
 }
 
+function buildTimelineSummary_(data) {
+  if (data.timeline === 'Avant une date précise' && data.preciseDate) {
+    return 'Fin souhaitée le ' + data.preciseDate;
+  }
+  return data.timeline || 'Non renseigné';
+}
+
+function photoGrid_(urls) {
+  return urls.map(function(url, index) {
+    return '<div class="photo"><img src="' + escapeAttribute_(url) + '" alt="Salle de bain actuelle ' + (index + 1) + '"/></div>';
+  }).join('');
+}
+
+function normalizeArray_(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  return [value];
+}
+
 function slug_(value) {
   return String(value || '')
     .normalize('NFD')
@@ -241,6 +275,10 @@ function escapeHtml_(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function escapeAttribute_(value) {
+  return escapeHtml_(value).replace(/`/g, '&#96;');
 }
 
 function jsonResponse_(body) {
@@ -274,6 +312,7 @@ function testWithExamplePayload() {
     supportNeeds: ['La conception complète', 'Une solution clé en main'],
     designFreedom: 'J’ai quelques envies, mais je veux être guidé',
     photosPlansAvailability: 'Je peux les envoyer plus tard',
+    currentBathroomPhotos: [],
     submittedAt: new Date().toISOString(),
   });
 }

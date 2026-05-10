@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import FormField from '@/components/FormField'
 import FormSection from '@/components/FormSection'
+import { uploadBathroomPhoto } from '@/lib/cloudinary'
 import { INITIAL_FORM, validateSubmitPayload } from '@/lib/validation'
 import type { BathroomFormData, SubmitResponse } from '@/types/form'
 
@@ -26,6 +27,7 @@ declare global {
 type Status = 'idle' | 'sending' | 'success' | 'error'
 type FieldErrors = Partial<Record<keyof BathroomFormData | 'cfTurnstileToken', string>>
 
+const MAX_PHOTOS = 6
 const housingTypes = ['Maison', 'Appartement', 'Autre']
 const occupiedOptions = ['Oui', 'Non', 'À définir']
 const users = ['Couple', 'Famille', 'Enfants', 'Invités', 'Personne âgée', 'Usage occasionnel', 'Autre']
@@ -49,7 +51,13 @@ const equipments = [
   'Éclairage d’ambiance',
   'Autre',
 ]
-const inspirations = ['Photos Pinterest / Instagram', 'Photos d’hôtel ou de showroom', 'Magazine / catalogue', 'Plans ou croquis', 'Pas encore']
+const inspirations = [
+  'Photos Pinterest / Instagram',
+  'Photos d’hôtel ou de showroom',
+  'Magazine / catalogue',
+  'Plans ou croquis',
+  'Pas encore',
+]
 const styles = [
   'Contemporain',
   'Minimaliste',
@@ -82,13 +90,14 @@ const freedomLevels = [
   'J’ai quelques envies, mais je veux être guidé',
   'Je préfère une proposition complète de votre part',
 ]
-const photosPlans = ['Oui', 'Non', 'Je peux les envoyer plus tard']
 
 export default function HomePage() {
   const [form, setForm] = useState<BathroomFormData>(INITIAL_FORM)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [status, setStatus] = useState<Status>('idle')
   const [message, setMessage] = useState('')
+  const [photoMessage, setPhotoMessage] = useState('')
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const [cfTurnstileToken, setCfTurnstileToken] = useState('')
   const [turnstileKey, setTurnstileKey] = useState(0)
   const turnstileContainerRef = useRef<HTMLDivElement>(null)
@@ -153,13 +162,45 @@ export default function HomePage() {
       setFieldErrors((current) => ({ ...current, [field]: undefined }))
     }
 
-  const toggleArray = (field: keyof BathroomFormData, value: string) => {
-    setForm((current) => {
-      const currentValue = current[field]
-      const list = Array.isArray(currentValue) ? currentValue : []
-      const next = list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
-      return { ...current, [field]: next }
-    })
+  const setArrayValue = (field: keyof BathroomFormData, values: string[]) => {
+    setForm((current) => ({ ...current, [field]: values }))
+  }
+
+  const uploadPhotos = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || [])
+    event.target.value = ''
+    if (!files.length) return
+
+    const remainingSlots = MAX_PHOTOS - form.currentBathroomPhotos.length
+    if (remainingSlots <= 0) {
+      setPhotoMessage(`Vous pouvez joindre jusqu’à ${MAX_PHOTOS} photos.`)
+      return
+    }
+
+    setUploadingPhotos(true)
+    setPhotoMessage('')
+    try {
+      const selectedFiles = files.slice(0, remainingSlots)
+      const urls = await Promise.all(selectedFiles.map(uploadBathroomPhoto))
+      setForm((current) => ({
+        ...current,
+        currentBathroomPhotos: [...current.currentBathroomPhotos, ...urls].slice(0, MAX_PHOTOS),
+      }))
+      if (files.length > remainingSlots) {
+        setPhotoMessage(`Seules les ${remainingSlots} premières photos ont été ajoutées.`)
+      }
+    } catch (error) {
+      setPhotoMessage(error instanceof Error ? error.message : 'L’ajout des photos a échoué.')
+    } finally {
+      setUploadingPhotos(false)
+    }
+  }
+
+  const removePhoto = (url: string) => {
+    setForm((current) => ({
+      ...current,
+      currentBathroomPhotos: current.currentBathroomPhotos.filter((photoUrl) => photoUrl !== url),
+    }))
   }
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -198,6 +239,7 @@ export default function HomePage() {
       setMessage('Merci, votre formulaire a bien été envoyé. Nous reviendrons vers vous pour préparer la visite.')
       setForm(INITIAL_FORM)
       setCfTurnstileToken('')
+      setPhotoMessage('')
       setTurnstileKey((key) => key + 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
@@ -309,20 +351,47 @@ export default function HomePage() {
                   placeholder="Élégante, chaleureuse, minimaliste, esprit hôtel, pratique, intemporelle…"
                 />
               </FormField>
-              <CheckboxGroup options={users} selected={form.bathroomUsers} onToggle={(value) => toggleArray('bathroomUsers', value)} />
+              <MultiSelectDropdown
+                label="Qui utilisera principalement cette salle de bain ?"
+                options={users}
+                selected={form.bathroomUsers}
+                onChange={(values) => setArrayValue('bathroomUsers', values)}
+              />
             </FormSection>
 
             <FormSection eyebrow="Section 3" title="Aménagement souhaité">
-              <RadioGroup name="layoutPreference" options={layouts} selected={form.layoutPreference} onChange={(value) => setForm({ ...form, layoutPreference: value as BathroomFormData['layoutPreference'] })} />
-              <CheckboxGroup options={equipments} selected={form.equipments} onToggle={(value) => toggleArray('equipments', value)} />
+              <FormField label="Souhaitez-vous plutôt :">
+                <RadioGroup
+                  name="layoutPreference"
+                  options={layouts}
+                  selected={form.layoutPreference}
+                  onChange={(value) => setForm((current) => ({ ...current, layoutPreference: value as BathroomFormData['layoutPreference'] }))}
+                />
+              </FormField>
+              <MultiSelectDropdown
+                label="Quels équipements souhaitez-vous intégrer ?"
+                options={equipments}
+                selected={form.equipments}
+                onChange={(values) => setArrayValue('equipments', values)}
+              />
               <FormField id="conserveOrAvoid" label="Y a-t-il des éléments que vous souhaitez absolument conserver ou éviter ?">
                 <Textarea id="conserveOrAvoid" value={form.conserveOrAvoid} onChange={setValue('conserveOrAvoid')} />
               </FormField>
             </FormSection>
 
             <FormSection eyebrow="Section 4" title="Style et ambiance">
-              <CheckboxGroup options={inspirations} selected={form.inspirations} onToggle={(value) => toggleArray('inspirations', value)} />
-              <CheckboxGroup options={styles} selected={form.preferredStyles} onToggle={(value) => toggleArray('preferredStyles', value)} />
+              <MultiSelectDropdown
+                label="Avez-vous déjà des inspirations ?"
+                options={inspirations}
+                selected={form.inspirations}
+                onChange={(values) => setArrayValue('inspirations', values)}
+              />
+              <MultiSelectDropdown
+                label="Quel style vous attire le plus ?"
+                options={styles}
+                selected={form.preferredStyles}
+                onChange={(values) => setArrayValue('preferredStyles', values)}
+              />
               <FormField id="likedMaterials" label="Quels matériaux ou finitions aimez-vous ?">
                 <Textarea
                   id="likedMaterials"
@@ -340,14 +409,36 @@ export default function HomePage() {
                 réaliste et adaptée.
               </p>
               <FormField label="Quel budget souhaitez-vous allouer à votre projet de rénovation ?" required error={fieldErrors.budget}>
-                <RadioGroup name="budget" options={budgets} selected={form.budget} onChange={(value) => setForm({ ...form, budget: value as BathroomFormData['budget'] })} />
+                <RadioGroup
+                  name="budget"
+                  options={budgets}
+                  selected={form.budget}
+                  onChange={(value) => setForm((current) => ({ ...current, budget: value as BathroomFormData['budget'] }))}
+                />
               </FormField>
             </FormSection>
 
             <FormSection eyebrow="Section 6" title="Délais et contraintes">
-              <RadioGroup name="timeline" options={timelines} selected={form.timeline} onChange={(value) => setForm({ ...form, timeline: value as BathroomFormData['timeline'] })} />
-              <FormField id="preciseDate" label="Si date précise">
-                <TextInput id="preciseDate" type="date" value={form.preciseDate} onChange={setValue('preciseDate')} disabled={form.timeline !== 'Avant une date précise'} />
+              <FormField label="Avez-vous une échéance particulière ?">
+                <RadioGroup
+                  name="timeline"
+                  options={timelines}
+                  selected={form.timeline}
+                  onChange={(value) => setForm((current) => ({ ...current, timeline: value as BathroomFormData['timeline'] }))}
+                />
+              </FormField>
+              <FormField
+                id="preciseDate"
+                label="Date de fin de chantier souhaitée"
+                hint="Si vous avez une échéance, indiquez idéalement la date à laquelle vous aimeriez que la salle de bain soit terminée."
+              >
+                <TextInput
+                  id="preciseDate"
+                  type="date"
+                  value={form.preciseDate}
+                  onChange={setValue('preciseDate')}
+                  disabled={form.timeline !== 'Avant une date précise'}
+                />
               </FormField>
               <FormField id="constraints" label="Y a-t-il des contraintes particulières à connaître ?">
                 <Textarea
@@ -360,13 +451,39 @@ export default function HomePage() {
             </FormSection>
 
             <FormSection eyebrow="Section 7" title="Accompagnement souhaité">
-              <CheckboxGroup options={supportNeeds} selected={form.supportNeeds} onToggle={(value) => toggleArray('supportNeeds', value)} />
-              <RadioGroup name="designFreedom" options={freedomLevels} selected={form.designFreedom} onChange={(value) => setForm({ ...form, designFreedom: value as BathroomFormData['designFreedom'] })} />
+              <MultiSelectDropdown
+                label="Souhaitez-vous être accompagné sur :"
+                options={supportNeeds}
+                selected={form.supportNeeds}
+                onChange={(values) => setArrayValue('supportNeeds', values)}
+              />
+              <FormField label="Quel niveau de liberté souhaitez-vous nous laisser ?">
+                <RadioGroup
+                  name="designFreedom"
+                  options={freedomLevels}
+                  selected={form.designFreedom}
+                  onChange={(value) => setForm((current) => ({ ...current, designFreedom: value as BathroomFormData['designFreedom'] }))}
+                />
+              </FormField>
             </FormSection>
 
-            <FormSection eyebrow="Section 8" title="Photos et plans">
-              <RadioGroup name="photosPlansAvailability" options={photosPlans} selected={form.photosPlansAvailability} onChange={(value) => setForm({ ...form, photosPlansAvailability: value as BathroomFormData['photosPlansAvailability'] })} />
-              <p className="text-sm text-white/55">Vous pourrez nous transmettre vos photos ou plans par email ou SMS après l’envoi du formulaire.</p>
+            <FormSection eyebrow="Section 8" title="Photos de l’existant">
+              <p className="text-sm leading-7 text-white/65">
+                Si vous en disposez, vous pouvez joindre quelques photos de votre salle de bain actuelle. Elles nous
+                permettront de préparer la visite avec une première lecture des volumes, des accès et des contraintes
+                techniques.
+              </p>
+              <PhotoUploader
+                photos={form.currentBathroomPhotos}
+                uploading={uploadingPhotos}
+                message={photoMessage}
+                onUpload={uploadPhotos}
+                onRemove={removePhoto}
+              />
+              <p className="text-sm text-white/55">
+                Vous pourrez aussi nous transmettre des plans ou inspirations complémentaires par email ou SMS après
+                l’envoi du formulaire.
+              </p>
             </FormSection>
 
             {hasTurnstile ? (
@@ -384,10 +501,10 @@ export default function HomePage() {
 
             <button
               className="fortis-focus w-full bg-[var(--gold)] px-8 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[var(--gold-light)] disabled:opacity-55"
-              disabled={status === 'sending'}
+              disabled={status === 'sending' || uploadingPhotos}
               type="submit"
             >
-              {status === 'sending' ? 'Envoi en cours…' : 'Envoyer ma préparation'}
+              {status === 'sending' ? 'Envoi en cours…' : uploadingPhotos ? 'Photos en cours d’ajout…' : 'Envoyer ma préparation'}
             </button>
           </form>
         </div>
@@ -414,10 +531,7 @@ function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   )
 }
 
-function Select({
-  options,
-  ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement> & { options: string[] }) {
+function Select({ options, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { options: string[] }) {
   return (
     <select
       {...props}
@@ -433,28 +547,105 @@ function Select({
   )
 }
 
-function CheckboxGroup({
+function MultiSelectDropdown({
+  label,
   options,
   selected,
-  onToggle,
+  onChange,
 }: {
+  label: string
   options: string[]
   selected: string[]
-  onToggle: (value: string) => void
+  onChange: (values: string[]) => void
 }) {
+  const summary = selected.length ? selected.join(', ') : 'Sélectionner une ou plusieurs réponses'
+
+  const toggle = (option: string) => {
+    onChange(selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option])
+  }
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {options.map((option) => (
-        <label key={option} className="flex items-center gap-3 border border-white/10 bg-black/15 p-3 text-sm text-white/75">
-          <input
-            type="checkbox"
-            className="h-4 w-4 accent-[var(--gold)]"
-            checked={selected.includes(option)}
-            onChange={() => onToggle(option)}
-          />
-          {option}
-        </label>
-      ))}
+    <div>
+      <p className="mb-2 block text-[12px] font-bold uppercase tracking-[0.12em] text-white/70">{label}</p>
+      <details className="group relative">
+        <summary className="fortis-focus flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 border border-white/20 bg-[var(--paper)] px-4 py-3 text-sm text-[var(--ink)]">
+          <span className={selected.length ? 'truncate' : 'text-[var(--ink-faint)]'}>{summary}</span>
+          <span className="text-[var(--gold)] transition group-open:rotate-180">⌄</span>
+        </summary>
+        <div className="absolute left-0 right-0 z-20 mt-2 max-h-80 overflow-auto border border-[var(--line)] bg-[var(--dark)] p-2 shadow-2xl shadow-black/40">
+          {options.map((option) => (
+            <label key={option} className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm text-white/75 transition hover:bg-white/5">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-[var(--gold)]"
+                checked={selected.includes(option)}
+                onChange={() => toggle(option)}
+              />
+              {option}
+            </label>
+          ))}
+        </div>
+      </details>
+      {selected.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {selected.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className="border border-[var(--line)] bg-black/20 px-3 py-1 text-xs text-white/65"
+              onClick={() => toggle(item)}
+            >
+              {item} ×
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function PhotoUploader({
+  photos,
+  uploading,
+  message,
+  onUpload,
+  onRemove,
+}: {
+  photos: string[]
+  uploading: boolean
+  message: string
+  onUpload: (event: React.ChangeEvent<HTMLInputElement>) => void
+  onRemove: (url: string) => void
+}) {
+  const remaining = MAX_PHOTOS - photos.length
+
+  return (
+    <div className="grid gap-4">
+      <label className="fortis-focus flex cursor-pointer flex-col items-center justify-center border border-dashed border-[var(--line)] bg-black/20 px-5 py-8 text-center transition hover:bg-black/30">
+        <span className="mb-2 text-sm font-bold uppercase tracking-[0.14em] text-[var(--gold)]">
+          {uploading ? 'Ajout des photos…' : 'Ajouter des photos'}
+        </span>
+        <span className="text-sm text-white/55">
+          Jusqu’à {MAX_PHOTOS} photos, format image.{' '}
+          {remaining > 0
+            ? `${remaining} emplacement${remaining > 1 ? 's' : ''} restant${remaining > 1 ? 's' : ''}.`
+            : 'Limite atteinte.'}
+        </span>
+        <input className="sr-only" type="file" accept="image/*" multiple disabled={uploading || remaining <= 0} onChange={onUpload} />
+      </label>
+      {message ? <p className="text-sm text-[#ffd4ce]">{message}</p> : null}
+      {photos.length ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {photos.map((url, index) => (
+            <div key={url} className="relative overflow-hidden border border-white/10 bg-black/20">
+              <img src={url} alt={`Salle de bain actuelle ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
+              <button type="button" className="absolute right-2 top-2 bg-black/70 px-2 py-1 text-xs text-white" onClick={() => onRemove(url)}>
+                Retirer
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }

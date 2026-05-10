@@ -24,6 +24,7 @@ export const INITIAL_FORM: BathroomFormData = {
   supportNeeds: [],
   designFreedom: '',
   photosPlansAvailability: '',
+  currentBathroomPhotos: [],
 }
 
 export type ValidationResult = {
@@ -100,6 +101,7 @@ export function normalizePayload(payload: unknown): SubmitPayload {
     supportNeeds: cleanArray(source.supportNeeds),
     designFreedom: cleanText(source.designFreedom) as SubmitPayload['designFreedom'],
     photosPlansAvailability: cleanText(source.photosPlansAvailability) as SubmitPayload['photosPlansAvailability'],
+    currentBathroomPhotos: cleanArray(source.currentBathroomPhotos),
     cfTurnstileToken: cleanText(source.cfTurnstileToken),
   }
 }
@@ -163,7 +165,10 @@ export function buildSections(data: BathroomFormData) {
     },
     {
       title: 'Photos et plans',
-      items: [{ label: 'Photos ou plans disponibles', value: data.photosPlansAvailability }],
+      items: [
+        { label: 'Photos ou plans disponibles', value: data.photosPlansAvailability },
+        { label: 'Photos de la salle de bain actuelle', value: data.currentBathroomPhotos },
+      ],
     },
   ]
 }

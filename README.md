@@ -22,12 +22,15 @@ APPS_SCRIPT_WEBHOOK_SECRET=
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 TURNSTILE_SECRET_KEY=
 NEXT_PUBLIC_SITE_URL=
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dlmt2ctha
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=Cloudinary
 ```
 
 - `APPS_SCRIPT_WEBHOOK_URL` : URL `/exec` du déploiement Web App Apps Script.
 - `APPS_SCRIPT_WEBHOOK_SECRET` : secret partagé avec Apps Script.
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` et `TURNSTILE_SECRET_KEY` : optionnels. Si `TURNSTILE_SECRET_KEY` est défini, l’API vérifie le token anti-spam.
 - `NEXT_PUBLIC_SITE_URL` : URL publique Vercel.
+- `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` et `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` : configuration de l’upload des photos de la salle de bain actuelle.
 
 ## Apps Script
 
@@ -87,6 +90,7 @@ La clé PDF.co ne doit jamais être commitée. Comme elle a déjà été partag�
 - Secret invalide refusé par Apps Script.
 - PDF généré par PDF.co.
 - PDF enregistré dans le bon dossier Drive.
+- Photos Cloudinary intégrées dans le PDF si le client en ajoute.
 - Nom du fichier au format `preparation-rdv-salle-de-bain-prenom-nom-date.pdf`.
 - Aucune donnée écrite dans Notion.
 - `npm run build` réussi.

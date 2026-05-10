@@ -52,6 +52,7 @@ export type BathroomFormData = {
   supportNeeds: string[]
   designFreedom: DesignFreedom
   photosPlansAvailability: PhotosPlansAvailability
+  currentBathroomPhotos: string[]
 }
 
 export type SubmitPayload = BathroomFormData & {
