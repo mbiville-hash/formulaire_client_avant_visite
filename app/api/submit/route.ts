@@ -46,10 +46,13 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('Submit failed', error)
+    const message = error instanceof Error ? error.message : ''
     return NextResponse.json<SubmitResponse>(
       {
         ok: false,
-        error: 'Une erreur est survenue pendant l’envoi. Merci de réessayer ou de nous contacter directement.',
+        error: message
+          ? `Envoi impossible : ${message}`
+          : 'Une erreur est survenue pendant l’envoi. Merci de réessayer ou de nous contacter directement.',
       },
       { status: 502 },
     )

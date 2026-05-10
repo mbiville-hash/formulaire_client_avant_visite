@@ -30,7 +30,7 @@ type FieldErrors = Partial<Record<keyof BathroomFormData | 'cfTurnstileToken', s
 const MAX_PHOTOS = 6
 const housingTypes = ['Maison', 'Appartement', 'Autre']
 const occupiedOptions = ['Oui', 'Non', 'À définir']
-const users = ['Couple', 'Famille', 'Enfants', 'Invités', 'Personne âgée', 'Usage occasionnel', 'Autre']
+const users = ['Adulte', 'Couple', 'Famille', 'Enfants', 'Invités', 'Personne âgée', 'Usage occasionnel', 'Autre']
 const layouts = [
   'Une douche',
   'Une baignoire',
@@ -148,6 +148,22 @@ export default function HomePage() {
       }
     }
   }, [hasTurnstile, turnstileKey, turnstileSiteKey])
+
+  useEffect(() => {
+    const closeDropdowns = (event: PointerEvent) => {
+      const target = event.target
+      if (!(target instanceof Node)) return
+
+      document.querySelectorAll<HTMLDetailsElement>('[data-multiselect]').forEach((details) => {
+        if (!details.contains(target)) {
+          details.open = false
+        }
+      })
+    }
+
+    document.addEventListener('pointerdown', closeDropdowns)
+    return () => document.removeEventListener('pointerdown', closeDropdowns)
+  }, [])
 
   const completion = useMemo(() => {
     const required = ['firstName', 'lastName', 'email', 'phone', 'projectAddress', 'budget'] as const
@@ -567,7 +583,7 @@ function MultiSelectDropdown({
   return (
     <div>
       <p className="mb-2 block text-[12px] font-bold uppercase tracking-[0.12em] text-white/70">{label}</p>
-      <details className="group relative">
+      <details className="group relative" data-multiselect>
         <summary className="fortis-focus flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 border border-white/20 bg-[var(--paper)] px-4 py-3 text-sm text-[var(--ink)]">
           <span className={selected.length ? 'truncate' : 'text-[var(--ink-faint)]'}>{summary}</span>
           <span className="text-[var(--gold)] transition group-open:rotate-180">⌄</span>
