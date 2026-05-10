@@ -20,6 +20,13 @@ export const metadata: Metadata = {
   description:
     'Formulaire de préparation pour une visite de qualification de rénovation de salle de bain avec Fortis Rénovation.',
   robots: { index: false, follow: false },
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png' }],
+  },
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

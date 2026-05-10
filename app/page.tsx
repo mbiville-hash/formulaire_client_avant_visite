@@ -252,7 +252,7 @@ export default function HomePage() {
       }
 
       setStatus('success')
-      setMessage('Merci, votre formulaire a bien été envoyé. Nous reviendrons vers vous pour préparer la visite.')
+      setMessage('Votre formulaire a bien été envoyé. Nous reviendrons vers vous pour préparer la visite.')
       setForm(INITIAL_FORM)
       setCfTurnstileToken('')
       setPhotoMessage('')
@@ -268,6 +268,16 @@ export default function HomePage() {
 
   return (
     <main>
+      {status === 'success' ? (
+        <section className="fixed inset-0 z-50 flex min-h-screen items-center justify-center bg-[var(--dark)] px-6 text-center">
+          <div className="max-w-2xl border border-[var(--line)] bg-white/[0.04] px-6 py-12 shadow-2xl shadow-black/40 sm:px-12">
+            <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--gold)]">Formulaire envoyé</p>
+            <h1 className="mb-6 font-serif text-5xl leading-tight text-white sm:text-6xl">Préparation reçue.</h1>
+            <p className="mx-auto max-w-xl text-base leading-8 text-white/70">{message}</p>
+            <p className="mt-8 text-sm text-white/45">Fortis Rénovation</p>
+          </div>
+        </section>
+      ) : null}
       <header className="border-b border-white/10 bg-[rgba(17,17,16,0.82)] backdrop-blur">
         <div className="container flex min-h-[68px] items-center justify-between gap-4">
           <a className="fortis-focus font-serif text-xl font-bold tracking-[0.04em] text-white" href="https://www.fortisrenovation.fr">
@@ -306,14 +316,6 @@ export default function HomePage() {
         </aside>
 
         <div className="border border-[var(--line)] bg-[rgba(245,240,232,0.05)] p-4 shadow-2xl shadow-black/30 sm:p-6">
-          {status === 'success' ? (
-            <div className="border border-[var(--line)] bg-[var(--dark)] p-8 text-center sm:p-12">
-              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Formulaire envoyé</p>
-              <h2 className="mb-4 font-serif text-4xl text-white">Merci.</h2>
-              <p className="mx-auto max-w-lg text-white/70">{message}</p>
-            </div>
-          ) : null}
-
           <form className="grid gap-6" onSubmit={submit} noValidate>
             <FormSection eyebrow="Section 1" title="Informations client">
               <div className="grid gap-5 sm:grid-cols-2">

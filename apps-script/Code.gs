@@ -135,27 +135,28 @@ function buildPdfHtml_(data) {
     '<style>' +
     '*{box-sizing:border-box;margin:0;padding:0}' +
     ':root{--dark:#111110;--gold:#b8975a;--paper:#f5f0e8;--white:#fff;--ink:#1a1a18;--soft:rgba(26,26,24,.62);--line:rgba(184,151,90,.28)}' +
-    'body{background:var(--paper);font-family:Montserrat,sans-serif;color:var(--ink);font-size:12px;line-height:1.62;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
-    '.page{width:210mm;min-height:297mm;margin:0 auto;background:var(--paper)}' +
+    '@page{size:A4;margin:0}' +
+    'html,body{background:var(--paper);font-family:Montserrat,sans-serif;color:var(--ink);font-size:12px;line-height:1.62;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '.page{width:210mm;margin:0 auto;background:var(--paper)}' +
     '.header{background:var(--dark);padding:30px 40px 26px;color:var(--white)}' +
     '.brand{font-family:"Bodoni Moda",serif;font-size:18px;font-weight:700;letter-spacing:.04em}.brand span{color:var(--gold)}' +
     '.kicker{margin-top:6px;font-size:8px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.45)}' +
     '.title{margin-top:28px;font-family:"Bodoni Moda",serif;font-size:28px;line-height:1.12;max-width:520px}' +
     '.subtitle{margin-top:12px;color:rgba(255,255,255,.62);font-size:11px;letter-spacing:.02em}' +
     '.goldbar{height:3px;background:var(--gold)}' +
-    '.body{padding:30px 40px 42px}' +
+    '.body{padding:30px 40px 34px}' +
     '.meta{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);background:#fff;margin-bottom:28px}' +
     '.meta-cell{padding:12px 14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.meta-cell:nth-child(even){border-right:none}.meta-cell:nth-last-child(-n+2){border-bottom:none}' +
     '.label{font-size:8px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}.value{font-size:12px;font-weight:600;color:var(--ink)}' +
-    '.summary{background:var(--dark);color:#fff;padding:20px 22px;margin-bottom:28px;break-inside:avoid}.summary-title{font-family:"Bodoni Moda",serif;font-size:20px;margin-bottom:14px}.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.summary-item{border-top:1px solid rgba(184,151,90,.35);padding-top:8px}.summary-label{font-size:7px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}.summary-value{font-size:11px;color:rgba(255,255,255,.82)}' +
+    '.summary{background:var(--dark);color:#fff;padding:20px 22px;margin-bottom:24px;break-inside:avoid;page-break-inside:avoid}.summary-title{font-family:"Bodoni Moda",serif;font-size:20px;margin-bottom:14px}.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.summary-item{border-top:1px solid rgba(184,151,90,.35);padding-top:8px}.summary-label{font-size:7px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}.summary-value{font-size:11px;color:rgba(255,255,255,.82)}' +
     '.section{margin:0 0 22px}.section-title{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:12px;display:flex;align-items:center;gap:10px}.section-title:before{content:"";width:20px;height:1px;background:var(--gold);display:block}' +
-    '.qa{break-inside:avoid;background:#fff;border-left:2px solid var(--gold);padding:10px 14px;margin-bottom:8px}.question{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin-bottom:4px}.answer{white-space:pre-wrap;font-size:12px;color:var(--ink)}' +
-    '.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.photo{height:118px;background:#e8e2d8;border:1px solid var(--line);overflow:hidden}.photo img{width:100%;height:100%;object-fit:cover;display:block}' +
-    '.footer{background:var(--dark);color:rgba(255,255,255,.45);padding:14px 40px;font-size:9px;display:flex;justify-content:space-between}.footer strong{color:var(--gold);font-weight:600}' +
+    '.qa{break-inside:avoid;page-break-inside:avoid;background:#fff;border-left:2px solid var(--gold);padding:10px 14px;margin-bottom:8px}.question{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin-bottom:4px}.answer{white-space:pre-wrap;font-size:12px;color:var(--ink)}' +
+    '.photos-section{break-inside:avoid;page-break-inside:avoid}.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.photo{height:118px;background:#e8e2d8;border:1px solid var(--line);overflow:hidden}.photo img{width:100%;height:100%;object-fit:cover;display:block}' +
+    '.footer{break-inside:avoid;page-break-inside:avoid;margin:22px 40px 0;background:var(--dark);color:rgba(255,255,255,.45);padding:14px 40px;font-size:9px;display:flex;justify-content:space-between}.footer strong{color:var(--gold);font-weight:600}' +
     '</style></head><body><div class="page">' +
     '<div class="header"><div class="brand">FORTIS<span>.</span></div><div class="kicker">Renovation salle de bain</div>' +
     '<h1 class="title">Préparation rendez-vous — Rénovation salle de bain</h1>' +
-    '<p class="subtitle">Document généré automatiquement à partir du questionnaire client.</p></div><div class="goldbar"></div>' +
+    '<p class="subtitle">Synthèse de préparation avant visite de qualification.</p></div><div class="goldbar"></div>' +
     '<div class="body">' +
     '<div class="meta">' +
     metaCell_('Date de soumission', submissionDate) +
@@ -201,7 +202,7 @@ function buildPdfHtml_(data) {
       ['Accompagnement attendu', data.supportNeeds],
       ['Niveau de liberté souhaité', data.designFreedom],
     ]) +
-    '<div class="section"><div class="section-title">Photos de la salle de bain actuelle</div>' +
+    '<div class="section photos-section"><div class="section-title">Photos de la salle de bain actuelle</div>' +
     (photoUrls.length ? '<div class="photos">' + photoGrid_(photoUrls) + '</div>' : qa_('Photos jointes', 'Aucune photo jointe.')) +
     qa_('Compléments', 'Le client pourra transmettre des plans ou inspirations complémentaires par email ou SMS après l’envoi du formulaire.') +
     '</div>' +
