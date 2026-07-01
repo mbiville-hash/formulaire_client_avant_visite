@@ -655,8 +655,8 @@ function PhotoUploader({
       {photos.length ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {photos.map((url, index) => (
-            <div key={url} className="relative overflow-hidden border border-white/10 bg-black/20">
-              <img src={url} alt={`Salle de bain actuelle ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
+            <div key={url} className="relative border border-white/10 bg-black/20 flex items-center justify-center">
+              <img src={url} alt={`Salle de bain actuelle ${index + 1}`} className="w-full h-auto object-contain max-h-56" />
               <button type="button" className="absolute right-2 top-2 bg-black/70 px-2 py-1 text-xs text-white" onClick={() => onRemove(url)}>
                 Retirer
               </button>
