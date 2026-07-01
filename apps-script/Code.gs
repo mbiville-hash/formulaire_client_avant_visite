@@ -33,7 +33,34 @@ function processBathroomPreparation_(payload) {
   const pdfBlob = createPdfWithPdfCo_(html, filename, pdfCoApiKey);
   const file = folder.createFile(pdfBlob.setName(filename));
 
-  return { file };
+  const photoFolder = savePhotosToDrive_(payload, folder);
+
+  return { file, photoFolder };
+}
+
+function savePhotosToDrive_(payload, parentFolder) {
+  const photoUrls = normalizeArray_(payload.currentBathroomPhotos).filter(Boolean);
+  if (!photoUrls.length) {
+    return null;
+  }
+
+  const fullName = [payload.firstName, payload.lastName].filter(Boolean).join(' ').trim() || 'Client';
+  const photoFolder = parentFolder.createFolder('Photos — ' + fullName);
+
+  photoUrls.forEach(function (url, index) {
+    try {
+      const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+      if (response.getResponseCode() !== 200) {
+        return;
+      }
+      const blob = response.getBlob().setName('photo-' + (index + 1) + '.jpg');
+      photoFolder.createFile(blob);
+    } catch (err) {
+      // On ignore une photo qui echoue pour ne pas bloquer les autres.
+    }
+  });
+
+  return photoFolder;
 }
 
 function parseRequest_(e) {
